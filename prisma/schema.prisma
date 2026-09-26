@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// tipe: "PER_KG" | "PER_ITEM"
+model PriceList {
+  id         String      @id @default(cuid())
+  nama       String
+  tipe       String
+  harga      Float
+  aktif      Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  orderItems OrderItem[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  nama      String
+  telepon   String
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// status: "DITERIMA" | "DICUCI" | "DISETRIKA" | "SIAP_DIAMBIL" | "DIAMBIL"
+model Order {
+  id            String            @id @default(cuid())
+  kodeTracking  String            @unique
+  customerId    String
+  customer      Customer          @relation(fields: [customerId], references: [id])
+  status        String            @default("DITERIMA")
+  totalHarga    Float
+  catatan       String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  items         OrderItem[]
+  history       StatusHistory[]
+  notifications NotificationLog[]
+}
+
+model OrderItem {
+  id                  String    @id @default(cuid())
+  orderId             String
+  order               Order     @relation(fields: [orderId], references: [id])
+  priceListId         String
+  priceList           PriceList @relation(fields: [priceListId], references: [id])
+  namaSnapshot        String
+  tipeSnapshot        String
+  hargaSatuanSnapshot Float
+  qty                 Float
+  subtotal            Float
+}
+
+model StatusHistory {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  statusDari String
+  statusKe   String
+  changedAt  DateTime @default(now())
+}
+
+// type: "SIAP_DIAMBIL", status: "SENT"
+model NotificationLog {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  type      String
+  status    String
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, type])
+}
