@@ -35,7 +35,7 @@ export async function createOrder(input: CreateOrderInput) {
     throw new EmptyOrderError();
   }
 
-  const priceListIds = [...new Set(input.items.map((i) => i.priceListId))];
+  const priceListIds = Array.from(new Set(input.items.map((i) => i.priceListId)));
   const priceLists = await prisma.priceList.findMany({
     where: { id: { in: priceListIds }, aktif: true },
   });
@@ -87,9 +87,10 @@ export async function createOrder(input: CreateOrderInput) {
         });
       });
       return order;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const prismaErr = err as { code?: string; meta?: { target?: string[] } };
       const isUniqueKodeTrackingClash =
-        err?.code === "P2002" && err?.meta?.target?.includes?.("kodeTracking");
+        prismaErr?.code === "P2002" && prismaErr?.meta?.target?.includes("kodeTracking");
       if (!isUniqueKodeTrackingClash || attempt === maxAttempts - 1) throw err;
     }
   }

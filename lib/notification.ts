@@ -42,8 +42,8 @@ export async function sendSiapDiambilNotification(orderId: string) {
         status: "SENT",
       },
     });
-  } catch (err: any) {
-    if (err?.code === "P2002") {
+  } catch (err: unknown) {
+    if (err instanceof Error && "code" in err && (err as { code?: string }).code === "P2002") {
       // Sudah dikirim oleh proses lain, tidak perlu kirim lagi.
       return { sent: false, reason: "already_sent" as const };
     }
